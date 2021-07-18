@@ -68,228 +68,7 @@
 # See: https://tools.ietf.org/html/rfc2234
 
 machine sip;
-
-# p指针回退一个字符
-action hold {
-    fhold;
-}
-
-# p指针后移一个，cs记录当前状态值后，退出状态机匹配
-action break {
-    fbreak;
-}
-
-# 将当前正在处理的字符的游标保存到mark变量里
-# 一般可以在表达式起始匹配时触发该动作
-action mark {
-    mark = p
-}
-
-# 字符串回溯，将p回溯到给定的游标前一个字符位置。
-# 这里是 p = (mark) - 1;
-action backtrack {
-    fexec mark;
-}
-
-# amt 变量赋值
-action start {
-    amt = 0
-}
-
-# 在缓冲区中追加一个当前指针指向的字符
-action append {
-    buf[amt] = fc
-    amt++
-}
-
-# 在缓冲区中追加一个空格
-action space {
-    buf[amt] = ' '
-    amt++
-}
-
-# 将16进制字符数值换算成整型16进制数值并左移一位，赋值给hex变量
-action hexHi {
-    hex = unhex(fc) * 16
-}
-
-# 将字符类型16进制数值换算成整型16进制数值，和hex相加，并追加在buf缓冲区中
-action hexLo {
-    hex += unhex(fc)
-    buf[amt] = hex
-    amt++
-}
-
-# 将方法字符串从要解析的数据中拷贝出来
-action Method {
-    msg.Method = string(data[mark:p])
-}
-
-# 解析SIP大版本号
-action VersionMajor {
-    msg.VersionMajor = msg.VersionMajor * 10 + (fc - 0x30)
-}
-
-# 解析SIP小版本号
-action VersionMinor {
-    msg.VersionMinor = msg.VersionMinor * 10 + (fc - 0x30)
-}
-
-# 解析请求URI，如果请求URI解析出错，直接退出其余解析
-action RequestURI {
-    msg.Request, err = ParseURI(data[mark:p])
-    if err != nil { return nil, err }
-}
-
-# 将状态码字符转换成10进制整数
-action StatusCode {
-    msg.Status = msg.Status * 10 + (int(fc) - 0x30)
-}
-
-# 提取临时缓冲区里的字符串作为Reason
-action ReasonPhrase {
-    msg.Phrase = string(buf[0:amt])
-}
-
-# 新建一个Via对象
-action ViaNew {
-    via = new(Via)
-}
-
-# viap = via->next, via = null
-action Via {
-    *viap = via
-    viap = &via.Next
-    via = nil
-}
-
-# 从输入数据中提取出via.protocol
-action ViaProtocol {
-    via.Protocol = string(data[mark:p])
-}
-
-# 从输入数据中提取出via.version
-action ViaVersion {
-    via.Version = string(data[mark:p])
-}
-
-# 提取出via.transport
-action ViaTransport {
-    via.Transport = string(data[mark:p])
-}
-
-# 提取出via.Host
-action ViaHost {
-    via.Host = string(data[mark:p])
-}
-
-# 提取出via.port
-action ViaPort {
-    via.Port = via.Port * 10 + (uint16(fc) - 0x30)
-}
-
-# 从缓冲区提取出via.param
-action ViaParam {
-    via.Param = &Param{name, string(buf[0:amt]), via.Param}
-}
-
-# 跳转到xheader状态机匹配SIP扩展头
-action gxh {
-    fhold;
-    fgoto xheader;
-}
-
-# 从缓冲区中将字段名提取出来保存到name变量中
-action name {
-    name = string(data[mark:p])
-}
-
-# 把头域字段值从输入数据中提取出来
-action value {{
-    b := data[mark:p - 1]
-    if value != nil {
-        *value = string(b)
-    } else {
-        msg.XHeader = &XHeader{name, b, msg.XHeader}
-    }
-}}
-
-#
-action AddrNew {
-    addr = new(Addr)
-}
-
-# 把带双引号的地址从缓冲区中提取出来
-action AddrQuotedDisplay {
-    addr.Display = string(buf[0:amt])
-}
-
-# 把不带双引号的地址从缓冲区中提取出来
-action AddrUnquotedDisplay {{
-    end := p
-    for end > mark && whitespacec(data[end - 1]) {
-        end--
-    }
-    addr.Display = string(data[mark:end])
-}}
-
-#
-action AddrUri {
-    addr.Uri, err = ParseURI(data[mark:p])
-    if err != nil { return nil, err }
-}
-
-#
-action AddrParam {
-    addr.Param = &Param{name, string(buf[0:amt]), addr.Param}
-}
-
-#
-action Addr {
-    *addrp = addr
-    addrp = &addr.Next
-    addr = nil
-}
-
-#
-action CallID {
-    msg.CallID = string(data[mark:p])
-}
-
-#
-action ContentLength {
-    clen = clen * 10 + (int(fc) - 0x30)
-}
-
-#
-action ContentType {
-    ctype = string(data[mark:p])
-}
-
-#
-action CSeq {
-    msg.CSeq = msg.CSeq * 10 + (int(fc) - 0x30)
-}
-
-#
-action CSeqMethod {
-    msg.CSeqMethod = string(data[mark:p])
-}
-
-#
-action Expires {
-    msg.Expires = msg.Expires * 10 + (int(fc) - 0x30)
-}
-
-#
-action MaxForwards {
-    msg.MaxForwards = msg.MaxForwards * 10 + (int(fc) - 0x30)
-}
-
-#
-action MinExpires {
-    msg.MinExpires = msg.MinExpires * 10 + (int(fc) - 0x30)
-}
+include sip_act "msg_parse.rl";
 
 # 跳转到指定的状态机表达式中开始匹配
 action goto_addr { fgoto addr; }
@@ -500,55 +279,55 @@ addr              := [<\"] @AddrNew @hold @goto_addr_angled
 # 匹配到相应的带IP地址的头域字段（不区分大小写、接受缩写）时，addrp的指针指向SIP消息结构体里相应的字段的值变量，好在后续匹配成功后，直接将值拷贝到SIP消息结构体中
 # These headers set the addr pointer to tell the 'value' machine where to
 # store the value after using ParseAddrBytes().
-aname    = ("Contact"i | "m"i) %{addrp=lastAddr(&msg.Contact)}
-         | ("From"i | "f"i) %{addrp=lastAddr(&msg.From)}
-         | "P-Asserted-Identity"i %{addrp=lastAddr(&msg.PAssertedIdentity)}
-         | "Record-Route"i %{addrp=lastAddr(&msg.RecordRoute)}
-         | "Remote-Party-ID"i %{addrp=lastAddr(&msg.RemotePartyID)}
-         | "Route"i %{addrp=lastAddr(&msg.Route)}
-         | ("To"i | "t"i) %{addrp=lastAddr(&msg.To)}
+aname    = ("Contact"i | "m"i) %GetLastContactAddrP
+         | ("From"i | "f"i) %GetLastFromAddrP
+         | "P-Asserted-Identity"i %GetLastPAssertedIdentityAddrp
+         | "Record-Route"i %GetLastRecordRouteAddrP
+         | "Remote-Party-ID"i %GetLastRemotePartyIDAddrP
+         | "Route"i %GetLastRouteAddrP
+         | ("To"i | "t"i) %GetLastMsgAddrP
          ;
 
 # String Header Name Definitions
 # 匹配到相应的值是字符串的头域字段（不区分大小写、接受缩写）时，value指针指向SIP消息结构体里相应的字段的值变量，好在后续匹配成功后，直接将值拷贝到SIP消息结构体中。
 # These headers set the value pointer to tell the 'value' machine where to
 # store the resulting token string.
-sname    = "Accept"i %{value=&msg.Accept}
-         | ("Accept-Contact"i | "a"i) %{value=&msg.AcceptContact}
-         | "Accept-Encoding"i %{value=&msg.AcceptEncoding}
-         | "Accept-Language"i %{value=&msg.AcceptLanguage}
-         | ("Allow"i | "u"i) %{value=&msg.Allow}
-         | ("Allow-Events"i | "u"i) %{value=&msg.AllowEvents}
-         | "Alert-Info"i %{value=&msg.AlertInfo}
-         | "Authentication-Info"i %{value=&msg.AuthenticationInfo}
-         | "Authorization"i %{value=&msg.Authorization}
-         | "Content-Disposition"i %{value=&msg.ContentDisposition}
-         | "Content-Language"i %{value=&msg.ContentLanguage}
-         | ("Content-Encoding"i | "e"i) %{value=&msg.ContentEncoding}
-         | "Call-Info"i %{value=&msg.CallInfo}
-         | "Date"i %{value=&msg.Date}
-         | "Error-Info"i %{value=&msg.ErrorInfo}
-         | ("Event"i | "o"i) %{value=&msg.Event}
-         | "In-Reply-To"i %{value=&msg.InReplyTo}
-         | "Reply-To"i %{value=&msg.ReplyTo}
-         | "MIME-Version"i %{value=&msg.MIMEVersion}
-         | "Organization"i %{value=&msg.Organization}
-         | "Priority"i %{value=&msg.Priority}
-         | "Proxy-Authenticate"i %{value=&msg.ProxyAuthenticate}
-         | "Proxy-Authorization"i %{value=&msg.ProxyAuthorization}
-         | "Proxy-Require"i %{value=&msg.ProxyRequire}
-         | ("Refer-To"i | "r"i) %{value=&msg.ReferTo}
-         | ("Referred-By"i | "b"i) %{value=&msg.ReferredBy}
-         | "Require"i %{value=&msg.Require}
-         | "Retry-After"i %{value=&msg.RetryAfter}
-         | "Server"i %{value=&msg.Server}
-         | ("Subject"i | "s"i) %{value=&msg.Subject}
-         | ("Supported"i | "k"i) %{value=&msg.Supported}
-         | "Timestamp"i %{value=&msg.Timestamp}
-         | "Unsupported"i %{value=&msg.Unsupported}
-         | "User-Agent"i %{value=&msg.UserAgent}
-         | "Warning"i %{value=&msg.Warning}
-         | "WWW-Authenticate"i %{value=&msg.WWWAuthenticate}
+sname    = "Accept"i %ValuePointAccept
+         | ("Accept-Contact"i | "a"i) %ValuePointAcceptContact
+         | "Accept-Encoding"i %ValuePointAcceptEncoding
+         | "Accept-Language"i %ValuePointAcceptLanguage
+         | ("Allow"i | "u"i) %ValuePointAllow
+         | ("Allow-Events"i | "u"i) %ValuePointAllowEvents
+         | "Alert-Info"i %ValuePointAlertInfo
+         | "Authentication-Info"i %ValuePointAuthenticationInfo
+         | "Authorization"i %ValuePointAuthorization
+         | "Content-Disposition"i %ValuePointContentDisposition
+         | "Content-Language"i %ValuePointContentLanguage
+         | ("Content-Encoding"i | "e"i) %ValueContentEncoding
+         | "Call-Info"i %ValuePointCallInfo
+         | "Date"i %ValuePointDate
+         | "Error-Info"i %ValuePointErrInfo
+         | ("Event"i | "o"i) %ValueEvent
+         | "In-Reply-To"i %ValuePointInReplyTo
+         | "Reply-To"i %ValuePointReplyTo
+         | "MIME-Version"i %ValuePointMIMEVersion
+         | "Organization"i %ValuePointOrganization
+         | "Priority"i %ValuePointPriority
+         | "Proxy-Authenticate"i %ValuePointProxyAuthenticate
+         | "Proxy-Authorization"i %ValuePointProxyAuthorization
+         | "Proxy-Require"i %ValuePointProxyRequire
+         | ("Refer-To"i | "r"i) %ValuePointReferTo
+         | ("Referred-By"i | "b"i) %ValuePointReferredBy
+         | "Require"i %ValuePointRequire
+         | "Retry-After"i %ValuePointRetryAfter
+         | "Server"i %ValuePointServer
+         | ("Subject"i | "s"i) %ValuePointSubject
+         | ("Supported"i | "k"i) %ValuePointSupported
+         | "Timestamp"i %ValuePointTimestamp
+         | "Unsupported"i %ValuePointUnsupported
+         | "User-Agent"i %ValuePointUserAgent
+         | "Warning"i %ValuePointWarning
+         | "WWW-Authenticate"i %ValuePointWWWAuthenticate
          ;
 
 # Custom Header Definitions
@@ -556,11 +335,11 @@ sname    = "Accept"i %{value=&msg.Accept}
 # These headers do not jump to the 'value' machine, but instead specify
 # their own special type of parsing.
 cheader  = ("Call-ID"i | "i"i) $!gxh HCOLON cid >mark %CallID
-         | ("Content-Length"i | "l"i) $!gxh HCOLON digit+ >{clen=0} @ContentLength
+         | ("Content-Length"i | "l"i) $!gxh HCOLON digit+ >ContentLengthInit @ContentLength
          | "CSeq"i $!gxh HCOLON (digit+ @CSeq) LWS token >mark %CSeqMethod
-         | ("Expires"i | "l"i) $!gxh HCOLON digit+ >{msg.Expires=0} @Expires
-         | ("Max-Forwards"i | "l"i) $!gxh HCOLON digit+ >{msg.MaxForwards=0} @MaxForwards
-         | ("Min-Expires"i | "l"i) $!gxh HCOLON digit+ >{msg.MinExpires=0} @MinExpires
+         | ("Expires"i | "l"i) $!gxh HCOLON digit+ >ExpiresInit @Expires
+         | ("Max-Forwards"i | "l"i) $!gxh HCOLON digit+ >MaxForwardsInit @MaxForwards
+         | ("Min-Expires"i | "l"i) $!gxh HCOLON digit+ >MinExpiresInit @MinExpires
          ;
 
 # Header Parsing SIP消息头解析
@@ -608,9 +387,9 @@ cheader  = ("Call-ID"i | "i"i) $!gxh HCOLON cid >mark %CallID
 # 扩展头存储到链表数据结构中，并保留大小写。
 # 这是这样的消息可以再现大致相同的外观。 使用`Msg.Headers`的人有责任进行不区分大小写的字符串比较。
 value   := hval <: CRLF @value @goto_header;
-xheader := token %name HCOLON <: any @{value=nil} @hold @goto_value;
+xheader := token %name HCOLON <: any @ValueSetNull @hold @goto_value;
 sheader  = cheader <: CRLF @goto_header
-         | aname $!gxh HCOLON <: any @{value=nil} @hold @goto_addr
+         | aname $!gxh HCOLON <: any @ValueSetNull @hold @goto_addr
          | sname $!gxh HCOLON <: any @hold @goto_value
          | ("Via"i | "v"i) $!gxh HCOLON <: any @ViaNew @hold @goto_via
          | ("Content-Type"i | "c"i) $!gxh HCOLON <: any @hold @goto_ctype;
