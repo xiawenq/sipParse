@@ -68,7 +68,7 @@
 # See: https://tools.ietf.org/html/rfc2234
 
 machine sip;
-include sip_act "msg_parse.rl";
+include sip_act "msg_parse_c.rl";
 
 # 跳转到指定的状态机表达式中开始匹配
 action goto_addr { fgoto addr; }

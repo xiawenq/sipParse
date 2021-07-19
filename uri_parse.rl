@@ -2,7 +2,7 @@
 %%{
     machine uri_parse_core;
     # 包含具体的目标代码的动作、封装源代码定义文件
-    include uri_parse_act "uri_parse_go.rl";
+    include uri_parse_act "uri_parse_c.rl";
     # Byte character definitions.
     mark            = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")";
     reserved        = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ",";
