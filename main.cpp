@@ -3,6 +3,7 @@
 //
 
 #include "common.h"
+#include <cstring>
 
 void Test_ParseUri() {
     char test[][1024] = {
@@ -38,6 +39,9 @@ void Test_ParseUri() {
 }
 
 void Test_ParseMsg() {
+    int checkLen = 0;
+    int sipLen = 0;
+    Msg *msg = 0;
     // 变态级别的SIP解析，带截断符的情况，只能指定字符串长度，不能用strlen
     char torture2[642] = "!interesting-Method0123456789_*+`.%indeed'~ sip:1_unusual.URI~(to-be!sure)&isn't+it$/crazy?,/;;*:&it+has=1,weird!*pas$wo~d_too.(doesn't-it)@example.com SIP/2.0\r\n"
                     "Via: SIP/2.0/TCP host1.example.com;branch=z9hG4bK-.!%66*_+`'~\r\n"
@@ -49,9 +53,12 @@ void Test_ParseMsg() {
                     "extensionHeader-!.%*+_`'~:\xEF\xBB\xBF\xE5\xA4\xA7\xE5\x81\x9C\xE9\x9B\xBB\r\n"
                     "Content-Length: 0\r\n"
                     "\r\n";
-    Msg *msg = ParseMsg(torture2, 642);
+    msg = ParseMsg(torture2, 642, &checkLen);
     if (msg) {
-        printf("SIP msg parse success\n");
+        printf("SIP msg parse success, total %d bytes, check %d bytes.\n", 642, checkLen);
+    }
+    else {
+        printf("SIP msg parse fail, total %d bytes, check %d bytes.\n", 642, checkLen);
     }
     char test[][10240] {
 
@@ -79,9 +86,14 @@ void Test_ParseMsg() {
     };
     int len = sizeof(test)/10240;
     for (int i = 0; i < len; i++) {
-        Msg *msg = ParseMsg(test[i], strlen(test[i]));
+        sipLen = strlen(test[i]);
+        checkLen = 0;
+        msg = ParseMsg(test[i], sipLen, &checkLen);
         if (msg) {
-            printf("SIP msg parse success\n");
+            printf("SIP msg parse success, total %d bytes, check %d bytes.\n", sipLen, checkLen);
+        }
+        else {
+            printf("SIP msg parse fail, total %d bytes, check %d bytes.\n", sipLen, checkLen);
         }
     }
 }

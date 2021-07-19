@@ -9,7 +9,7 @@
 %% write data;
 
 // ParseMsg turns a SIP message byte slice into a data structure.
-Msg *ParseMsg(char *data, int len) {
+Msg *ParseMsg(char *data, int len, int *checkLen) {
     if (!data) {
         printf("data pointer null\n");
     }
@@ -48,6 +48,8 @@ Msg *ParseMsg(char *data, int len) {
         }
         msg->Payload = new Payload{ctype, std::string(p, pe-p)};
     }
+    if (checkLen)
+        *checkLen = p - data + 1;
     return msg;
 }
 

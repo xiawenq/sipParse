@@ -19,7 +19,7 @@ typedef struct URIParam {
     URIParam    *Next = 0;
 }URIParam;
 
-typedef struct {
+typedef struct URI {
     std::string Scheme;     // e.g. sip, sips, tel, etc.
     std::string User;       // e.g. sip:USER@host
     std::string Pass;       // e.g. sip:user:PASS@host
@@ -153,5 +153,5 @@ extern bool whitespacec(char c);
 
 // Generated function from FSM Definition.
 extern URI *ParseURI(char *data, int len);
-extern Msg *ParseMsg(char *data, int len);
+extern Msg *ParseMsg(char *data, int len, int *checkLen);
 #endif //SIPPARSE_COMMON_H
