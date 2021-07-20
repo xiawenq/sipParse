@@ -421,6 +421,6 @@ Request         = Method SP RequestURI SP SIPVersion CRLF @goto_header;
 # 响应消息的起始行表达式，起始行匹配无误后，跳转到头域进行所有头域字段的解析
 Response        = SIPVersion SP StatusCode SP ReasonPhrase CRLF @goto_header;
 # 匹配判断SIP消息是请求消息还是响应消息
-Message         = Request | Response;
+Message         = (WSP | CR | LF)* (Request | Response);
 
 }%%
