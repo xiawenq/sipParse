@@ -13,6 +13,10 @@ Msg *ParseMsg(char *data, int len, int *checkLen, char *buf) {
     if (!data) {
         printf("data pointer null\n");
     }
+    char tmp[512];
+    if (!buf) {
+        buf = tmp;
+    }
 
     Msg *msg = new Msg;
     Via **viap = &msg->Via;
