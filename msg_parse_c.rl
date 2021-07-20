@@ -9,7 +9,7 @@
 %% write data;
 
 // ParseMsg turns a SIP message byte slice into a data structure.
-Msg *ParseMsg(char *data, int len, int *checkLen) {
+Msg *ParseMsg(char *data, int len, int *checkLen, char *buf) {
     if (!data) {
         printf("data pointer null\n");
     }
@@ -18,7 +18,6 @@ Msg *ParseMsg(char *data, int len, int *checkLen) {
     Via **viap = &msg->Via;
     int cs = 0;
     char *p = data, *pe = data+len, *eof = data+len, *mark = 0;
-    char *buf = (char*) malloc(len);
     int amt = 0, clen = 0;
     std::string ctype, name;
     int8_t hex;
@@ -30,26 +29,25 @@ Msg *ParseMsg(char *data, int len, int *checkLen) {
     %% write init;
     %% write exec;
 
-    free(buf);
     if (cs < msg_first_final) {
         if (p == pe) {
             printf("MsgIncompleteError, cs = %d\n", cs);
             delete msg; msg = 0;
         }
         else {
-            printf("MsgParseError, offset p: %d\n", p - data);
+            printf("MsgParseError, cs = %d, offset p: %d\n", cs, p - data);
             delete msg; msg = 0;
         }
     }
 
     if (clen > 0) {
-        if (clen != (len - (p-data))) {
+        if (clen > (len - (p-data))) {
             printf("Content-Length incorrect %d != %d\n", clen, len - (p-data));
         }
-        msg->Payload = new Payload{ctype, std::string(p, pe-p)};
+        msg->Payload = new Payload{ctype, std::string(p, clen)};
     }
     if (checkLen)
-        *checkLen = p - data + 1;
+        *checkLen = p - data;
     return msg;
 }
 

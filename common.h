@@ -220,5 +220,5 @@ extern bool whitespacec(char c);
 
 // Generated function from FSM Definition.
 extern URI *ParseURI(char *data, int len);
-extern Msg *ParseMsg(char *data, int len, int *checkLen);
+extern Msg *ParseMsg(char *data, int len, int *checkLen, char *buf);
 #endif //SIPPARSE_COMMON_H
