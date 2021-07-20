@@ -189,7 +189,7 @@ int fileSize(char *filename) {
 #include <sys/time.h>
 
 #define MAX_BUFF (1024*1024*1024)
-void Test_File(char *filename) {
+void Test_File(char *filename, int count) {
     FILE *fp = 0;
     char * buf = 0, *tmp = 0;
     int pos = 0;
@@ -202,7 +202,7 @@ void Test_File(char *filename) {
     unsigned long long start = 0, end = 0;
 
     gettimeofday(&tStart, 0);
-    start = tStart.tv_sec*1000000 + tStart.tv_usec;
+    start = tStart.tv_sec*1000 + tStart.tv_usec/1000;
 
     fp = fopen(filename, "rb");
     if (!fp) {
@@ -223,22 +223,23 @@ void Test_File(char *filename) {
         goto _end;
     }
     gettimeofday(&tRun, 0);
-    end = tRun.tv_sec*100000 + tRun.tv_usec;
-    printf("load file cost %llu us\n", end - start);
+    end = tRun.tv_sec*1000 + tRun.tv_usec/1000;
+    printf("load file cost %llu ms\n", end - start);
     tmp = (char*) malloc(8192);
+
+    gettimeofday(&tRun, 0);
+    start = tRun.tv_sec * 1000 + tRun.tv_usec/1000;
+
     // 循环解析1000次sip.txt中的内容
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < count; i++) {
 
         p = pos = 0;
         rlen = fSize;
         msgCount = 0;
 
-        gettimeofday(&tRun, 0);
-        start = tRun.tv_sec * 100000 + tRun.tv_usec;
-
         // 循环处理缓冲区数据
         while (rlen) {
-            msg = ParseMsg(&buf[pos], 8192, &p, tmp);
+            msg = ParseMsg(&buf[pos], 8192, &p, 0);
             if (msg) {
                 msgCount++;
                 if (msg->Payload) {
@@ -254,10 +255,10 @@ void Test_File(char *filename) {
             pos += p;
             rlen -= p;
         }
-        gettimeofday(&tEnd, 0);
-        end = tEnd.tv_sec * 100000 + tEnd.tv_usec;
-        printf("parse file [%d] KBytes, %d sip msg, cost %lld us %llu ms, %llu s\n", fSize / 1024, msgCount, end - start, (end - start) / 1000, (end - start) / 1000000);
     }
+    gettimeofday(&tEnd, 0);
+    end = tEnd.tv_sec * 1000 + tEnd.tv_usec/1000;
+    printf("parse file [%d] KBytes, %d sip msg, cost %lld ms\n", fSize*count / 1024, msgCount*count, end - start);
 _end:
     printf("function end\n");
     if (buf)
@@ -280,6 +281,12 @@ int main(int argc, char **argv) {
 
     Test_ParseMsg();
 
-    if (argc > 1)
-        Test_File(argv[1]);
+    if (argc > 1) {
+        int c = 1;
+        if (argc > 2)
+            c = atoi(argv[2]);
+        if (c == 0) c = 1;
+        Test_File(argv[1], c);
+    }
+
 }
