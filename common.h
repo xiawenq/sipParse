@@ -7,19 +7,33 @@
 
 #include <string>
 
-typedef struct URIHeader {
+class URIHeader {
+public:
     std::string Name;
     std::string Value;
     URIHeader   *Next = 0;
-}URIHeader;
 
-typedef struct URIParam {
+    ~URIHeader() {
+        if (Next) {
+            delete Next;
+        }
+    }
+};
+
+class URIParam {
+public:
     std::string Name;
     std::string Value;
     URIParam    *Next = 0;
-}URIParam;
 
-typedef struct URI {
+    ~URIParam() {
+        if (Next)
+            delete Next;
+    }
+};
+
+class URI {
+public:
     std::string Scheme;     // e.g. sip, sips, tel, etc.
     std::string User;       // e.g. sip:USER@host
     std::string Pass;       // e.g. sip:user:PASS@host
@@ -27,7 +41,14 @@ typedef struct URI {
     uint16_t    Port = 0;   // e.g. 5060, 80, etc.
     URIParam    *Param = 0; // e.g. ;isup-oli=00;day=tuesday
     URIHeader   *Header = 0;// e.g. ?subject=project%20x&lol=cat
-}URI;
+
+    ~URI() {
+        if (Param)
+            delete Param;
+        if (Header)
+            delete Header;
+    }
+};
 
 typedef struct Payload {
     std::string Type;
@@ -41,22 +62,39 @@ typedef struct UDPAddr {
 }UDPAddr;
 
 // Param is a linked list of ;key="values" for Addr/Via parameters.
-typedef struct Param {
+class Param {
+public:
     std::string Name;
     std::string Value;
     Param       *Next = 0;
-}Param;
+
+    ~Param() {
+        if (Next)
+            delete Next;
+    }
+};
 
 // Represents a SIP Address Linked List
-typedef struct Addr {
+class Addr {
+public:
     URI         *Uri = 0;   // never nil
     std::string Display;    // blank if not specified
     Param       *Param = 0; // these look like ;key=lol;rport;key=wut
     Addr        *Next = 0;  // for comma separated lists of addresses
-}Addr;
+
+    ~Addr() {
+        if (Uri)
+            delete Uri;
+        if (Param)
+            delete Param;
+        if (Next)
+            delete Next;
+    }
+};
 
 // Example: SIP/2.0/UDP 1.2.3.4:5060;branch=z9hG4bK556f77e6
-typedef struct Via {
+class Via {
+public:
     std::string Protocol;       // should be "SIP"
     std::string Version;        // protocol version e.g. "2.0"
     std::string Transport;      // transport type e.g. "UDP"
@@ -64,18 +102,32 @@ typedef struct Via {
     uint16_t    Port = 0;       // network port number
     Param       *Param = 0;     // param like branch, received, rport, etc.
     Via         *Next = 0;      // pointer to next via header if any
-}Via;
+
+    ~Via() {
+        if (Param)
+            delete Param;
+        if (Next)
+            delete Next;
+    }
+};
 
 // XHeader is a linked list storing an unrecognized SIP headers.
-typedef struct XHeader {
+class XHeader {
+public:
     std::string Name;       // tokenc
     std::string Value;      // UTF8, never nil
     XHeader     *Next = 0;
-}XHeader;
+
+    ~XHeader() {
+        if (Next)
+            delete Next;
+    }
+};
 
 // Msg represents a SIP message. This can either be a request or a response.
 // These fields are never nil unless otherwise specified.
-typedef struct Msg {
+class Msg {
+public:
     uint8_t     VersionMajor = 0;
     uint8_t     VersionMinor = 0;
     std::string Method;             // Indicates type of request (if request)
@@ -143,7 +195,22 @@ typedef struct Msg {
 
     // Extension headers.
     XHeader *XHeader = 0;
-}Msg;
+
+    ~Msg() {
+        delete Request;
+        delete Payload;
+        delete SourceAddr;
+        delete From;
+        delete To;
+        delete Via;
+        delete Route;
+        delete RecordRoute;
+        delete Contact;
+        delete PAssertedIdentity;
+        delete RemotePartyID;
+        delete XHeader;
+    }
+};
 
 // tool function
 extern int8_t unhex(char b);
