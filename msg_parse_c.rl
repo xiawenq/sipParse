@@ -199,6 +199,7 @@ Msg *ParseMsg(char *data, int len, int *checkLen, char *buf) {
     # 跳转到xheader状态机匹配SIP扩展头
     action gxh {
         fhold;
+        if (fc != '\n') fhold;
         fgoto xheader;
     }
 

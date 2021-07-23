@@ -243,6 +243,7 @@ public static Msg ParseMsg(byte[] data, int len, Integer checkLen) {
     # 跳转到xheader状态机匹配SIP扩展头
     action gxh {
         fhold;
+        if (fc != '\n') fhold;
         fgoto xheader;
     }
 
