@@ -108,7 +108,9 @@ class XHeader {
     public String toString(String prefix) {
         if (s == null) {
             s = "";
-            s += "\n";
+            s += prefix + "Name: " + (Name != null?new String(Name):
+                    "") + ", Value: " + (Value != null? new String(Value) : "") + "\n";
+            if (Next != null) s += Next.toString(prefix)+"\n";
         }
         return s;
     }
@@ -227,7 +229,7 @@ public class Msg {
             if (Unsupported != null) s += "Unsupported: " + new String(Unsupported)+"\n";
             if (WWWAuthenticate != null) s += "WWWAuthenticate: " + new String(WWWAuthenticate)+"\n";
             if (Warning != null) s += "Warning: " + new String(Warning)+"\n";
-            if (XHeader != null) s += "XHeader: [" + XHeader.toString("\t")+"\n";
+            if (XHeader != null) s += "XHeader: [" + XHeader.toString("\t")+"]\n";
         }
         return s;
     }

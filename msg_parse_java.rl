@@ -28,9 +28,10 @@ public class msg_parse {
 %% write data;
 
 // ParseMsg turns a SIP message byte slice into a data structure.
-public static Msg ParseMsg(byte[] data, int len, Integer checkLen) {
+public static ParseResult ParseMsg(byte[] data, int len) {
+    ParseResult ret = new ParseResult();
     if (data.length == 0) {
-        return null;
+        return ret;
     }
     Msg msg = new Msg();
     // viap := &msg.Via
@@ -60,13 +61,13 @@ public static Msg ParseMsg(byte[] data, int len, Integer checkLen) {
     if (cs < msg_first_final) {
         if (p == pe) {
             System.out.println("MsgIncompleteError, cs " + cs);
-            checkLen = p;
-            return null;
+            ret.checkLen = p;
+            return ret;
         }
         else {
             System.out.println("MsgParseError, cs = " + cs + " offset p: %d" + p);
-            checkLen = p;
-            return null;
+            ret.checkLen = p;
+            return ret;
         }
     }
 
@@ -79,8 +80,9 @@ public static Msg ParseMsg(byte[] data, int len, Integer checkLen) {
         System.arraycopy(data, p, buf, 0, clen);
         msg.Payload = new Payload(ctype, buf);
     }
-    checkLen = p;
-    return msg;
+    ret.checkLen = p;
+    ret.msg = msg;
+    return ret;
 }
 }
 
@@ -161,8 +163,8 @@ public static Msg ParseMsg(byte[] data, int len, Integer checkLen) {
         System.arraycopy(data, mark, tmp, 0, p-mark);
 		msg.Request = ParseURI(tmp, p - mark);
 		if (msg.Request == null) {
-			checkLen = p;
-			return null;
+			ret.checkLen = p;
+			return ret;
 		}
     }
 
@@ -264,12 +266,7 @@ public static Msg ParseMsg(byte[] data, int len, Integer checkLen) {
         //}
 		byte[] b = new byte[p - mark - 1];
 		System.arraycopy(data, mark , b, 0, p-mark-1);
-		if (value == null) {
-			value = b;
-		}
-        else {
-			msg.XHeader = new XHeader(name, b, msg.XHeader);
-		}
+        msg.XHeader = new XHeader(name, b, msg.XHeader);
     }}
 
     #
@@ -308,8 +305,8 @@ public static Msg ParseMsg(byte[] data, int len, Integer checkLen) {
 		System.arraycopy(data, mark, tmp, 0, p-mark);
 		addr.uri = ParseURI(tmp, p-mark);
 		if (addr.uri == null) {
-			checkLen = p;
-			return null;
+			ret.checkLen = p;
+			return ret;
 		}
     }
 
